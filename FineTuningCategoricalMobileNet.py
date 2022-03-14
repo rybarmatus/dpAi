@@ -3,6 +3,7 @@ import tensorflow as tf
 # casti kodu cerpane z https://keras.io/guides/transfer_learning/
 from keras import regularizers
 from tensorflow.python.framework.config import set_memory_growth
+import config
 
 tf.compat.v1.disable_v2_behavior()
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -15,16 +16,14 @@ if gpus:
 
 
 def  fineTune(data_path, outFileName):
-    img_h = 150
-    img_w = 150
-    batch_size = 32
+
 
     train_data = tf.keras.utils.image_dataset_from_directory(
         data_path,
         validation_split=0.2,
         subset='training',
         seed=123,
-        image_size=(img_w, img_h),
+        image_size=(config.img_w, config.img_w),
         color_mode='rgb',
         label_mode='categorical',
     )
@@ -34,7 +33,7 @@ def  fineTune(data_path, outFileName):
         validation_split=0.2,
         subset='validation',
         seed=123,
-        image_size=(img_w, img_h),
+        image_size=(config.img_w, config.img_w),
         color_mode='rgb',
         label_mode='categorical',
     )
@@ -49,7 +48,7 @@ def  fineTune(data_path, outFileName):
 
     base_model = keras.applications.MobileNetV2(
         weights="imagenet",  # Load weights pre-trained on ImageNet.
-        input_shape=(img_w, img_h, 3),
+        input_shape=(config.img_w, config.img_w, 3),
         include_top=False,
     )  # Do not include the ImageNet classifier at the top.
 
@@ -57,7 +56,7 @@ def  fineTune(data_path, outFileName):
     base_model.trainable = False
 
     # Create new model on top
-    inputs = keras.Input(shape=(img_w, img_h, 3))
+    inputs = keras.Input(shape=(config.img_w, config.img_w, 3))
     x = data_augmentation(inputs)  # Apply random data augmentation
 
     # Pre-trained Xception weights requires that input be scaled
