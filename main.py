@@ -15,6 +15,7 @@ if __name__ == '__main__':
     # FineTuningCategorical.fineTune(data_path, "all.h5")
     # FineTuningBinaryMobileNet.fineTune(data_path, "finedMobileEshops.h5")
     # FineTuningCategoricalMobileNet.fineTune(data_path, "fineCategoricalMobilenet.h5")
+    kmeans.do_kmeans_after_dim_reduction()
     kmeans.do_kmeans()
     pass
 
