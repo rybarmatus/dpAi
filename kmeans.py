@@ -1,4 +1,3 @@
-import random
 import time
 
 import cv2
@@ -8,7 +7,7 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
-import seaborn as sns
+
 import config
 
 
@@ -47,6 +46,7 @@ def extract_features(img_list: [], model):
     index = 0
     labels_list = []
     img_list.sort()
+    # iterovanie ciest k obrazkom stranok
     for img in img_list:
         category = img.split("\\")[3]
         im = cv2.imread(img)
@@ -131,7 +131,7 @@ def plot_data_2D_kmeans(model):
     cps_df.plot.scatter(x='x', y='y', color='label').show()
 
 
-def plot_data_3D_kmeans(model, k):
+def plot_data_3D_kmeans(model, k, save_path):
     import plotly.express as px
     cps_df = pd.read_csv('tsne3.csv')
     cps_df.loc[:, 'label'] = model
@@ -142,13 +142,14 @@ def plot_data_3D_kmeans(model, k):
     cps_df['symbol'] = cps_df['symbol'].apply(lambda x: 'circle')
     fig = px.scatter_3d(cps_df, x='x', y='y', z='z',
                         color='label', size='size', size_max=10)
-    fig.write_html("C:\\Users\\snako\\Desktop\\3d before tsnet\\file"+str(k)+".html")
+    fig.write_html(save_path + str(k) + ".html")
+
 
 def do_kmeans():
     pd.options.plotting.backend = 'plotly'
 
     train_data: tf.data.Dataset = tf.keras.utils.image_dataset_from_directory(
-        config.k_means_datapath,
+        config.images_path,
         seed=123,
         image_size=(config.img_w, config.img_h),
         batch_size=config.batch_size,
@@ -176,8 +177,7 @@ def do_kmeans():
     for k in K:
         model = KMeans(n_clusters=k, verbose=1).fit_predict(features)
         plot_data_2D_kmeans(model)
-        plot_data_3D_kmeans(model, k)
-
+        plot_data_3D_kmeans(model, k, "C:\\Users\\snako\\Desktop\\3d before tsnet\\file")
 
 
 def do_kmeans_after_dim_reduction():
@@ -191,7 +191,7 @@ def do_kmeans_after_dim_reduction():
     for k in K:
         model = KMeans(n_clusters=k, verbose=1).fit_predict(reduced_features)
         plot_data_2D_kmeans(model)
-        plot_data_3D_kmeans(model, k)
+        plot_data_3D_kmeans(model, k, "C:\\Users\\snako\\Desktop\\3d after tsnet\\file")
 
 
 def kmeans_elbow(train_data, model):
