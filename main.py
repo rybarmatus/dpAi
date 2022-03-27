@@ -19,7 +19,8 @@ if __name__ == '__main__':
     # FineTuningCategoricalMobileNet.fineTune(data_path, "fineCategoricalMobilenet.h5")
     # kmeans.do_kmeans_after_dim_reduction()
     # kmeans.do_kmeans()
-
+    kmeans.kmeans_elbow()
+    pass
     listOfFiles = []
     notPresent = []
     for (dirpath, dirnames, filenames) in os.walk(config.images_path):

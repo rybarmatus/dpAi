@@ -1,10 +1,25 @@
+from string import printable
+
 import numpy as np
 from bs4 import BeautifulSoup
 import os
-
+import re
 import config
 import translate_text
 import pandas as pd
+import string
+
+
+# odstrani interpunkciu, nie latinkove slova, lowercase, znaky
+def preprocess_text(page_str: str) -> str:
+    alpha_words = [word for word in page_str.split() if word.isalpha()]
+    page_str = " ".join(alpha_words)
+    page_str = page_str.lower()
+    page_str = re.sub("([^\x00-\x7F])+", " ", page_str)
+    page_str = re.sub(r'\d +', "", page_str)
+    page_str = page_str.translate(str.maketrans('', '', string.punctuation))
+    page_str = page_str.strip()
+    return page_str
 
 
 def do_extract():
@@ -49,18 +64,15 @@ def do_extract():
                     continue
                 page_str = translate_text.translate_if_needed(page_str)
 
-
-
                 page = f
                 category = dirpath.split('\\')[3]
-                arr = np.array([page, category, page_str])
-                # df_to_add = pd.DataFrame(columns=['page', 'category', 'text'])
-                # df_to_add.loc[0] = arr
-                # df = pd.concat([df, df_to_add], axis=1)
+
+                page_str = preprocess_text(page_str)
+                if len(page_str) < 1:
+                    continue
+                if page_str.__contains__('see relevant content for'):
+                    continue
                 df = df.append({'page': page, 'category': category, 'text': page_str}, ignore_index=True)
-                if index == 100:
-                    df.to_csv(config.web_texts, index=False, header=True)
-                    exit(0)
 
     df.to_csv(config.web_texts, index=False, header=True)
 

@@ -8,6 +8,9 @@ images_path = "D:\\dp2\\web_categories - Copy"
 # extrahovane priznaky s rozmerom stranok 100x100
 featuresFile = 'features_reduced.csv'
 
+# extrahovane priznaky s rozmerom stranok 100x100 scalenute na 0-1
+features_files_std = 'features_reduced_std.csv'
+
 # subor s HTML subormi stranok
 html_folder = 'D:\\storedHtmls\\web_categories - Copy'
 

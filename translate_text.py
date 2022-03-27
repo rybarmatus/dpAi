@@ -13,9 +13,9 @@ def translate_if_needed(to_translate: str) -> str:
     if to_translate is None: return ''
     if len(to_translate) < 1: return ''
     translator = Translator()
-    lang = detect(to_translate)
     # netreba prekladat, lebo to uz je v anglictine
     try:
+        lang = detect(to_translate)
         if lang == 'en':
             return to_translate
         return translator.translate(to_translate).text

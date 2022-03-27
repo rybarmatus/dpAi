@@ -9,7 +9,7 @@ from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
 
 import config
-
+from sklearn.preprocessing import StandardScaler
 
 def read_features() -> []:
     import csv
@@ -37,11 +37,11 @@ def get_or_extract_features(img_list, model):
 
 def do_csv_exists() -> bool:
     from pathlib import Path
-    my_file = Path(config.featuresFile)
+    my_file = Path(config.features_files_std)
     return my_file.is_file()
 
 
-def extract_features(img_list: [], model):
+def extract_features(img_list: [], model, normalized = True):
     features = []
     index = 0
     labels_list = []
@@ -55,6 +55,7 @@ def extract_features(img_list: [], model):
         resnet_feature = model.predict(img)
         resnet_feature_np = np.array(resnet_feature)
         feature = resnet_feature_np.flatten()
+        feature = np.std(feature)
         features.append(feature)
         labels_list.append(category)
         print(index)
@@ -187,20 +188,30 @@ def do_kmeans_after_dim_reduction():
     reduced_features_df = reduced_features_df.drop(columns='label')
     reduced_features = reduced_features_df.values
 
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(reduced_features)
+
     K = range(2, 14)
     for k in K:
-        model = KMeans(n_clusters=k, verbose=1).fit_predict(reduced_features)
+        model = KMeans(n_clusters=k, verbose=1).fit_predict(scaled_features)
         plot_data_2D_kmeans(model)
         plot_data_3D_kmeans(model, k, "C:\\Users\\snako\\Desktop\\3d after tsnet\\file")
 
 
-def kmeans_elbow(train_data, model):
-    features, labels_list = get_or_extract_features(train_data.file_paths, model)
+def kmeans_elbow():
+    # features, labels_list = get_or_extract_features(train_data.file_paths, model)
+
+    reduced_features_df = pd.read_csv(config.featuresFile)
+    # reduced_features_df = reduced_features_df.drop(columns='label')
+    reduced_features = reduced_features_df.values
+
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(reduced_features)
 
     sum_of_squared_distances = []
-    K = range(3, 14)
+    K = range(2, 14)
     for k in K:
-        model = KMeans(n_clusters=k, verbose=1).fit(features)
+        model = KMeans(n_clusters=k, verbose=1).fit(scaled_features)
         sum_of_squared_distances.append(model.inertia_)
 
     plt.plot(K, sum_of_squared_distances, "bx")
