@@ -1,13 +1,27 @@
-from string import printable
-
-import numpy as np
 from bs4 import BeautifulSoup
 import os
 import re
+
+
 import config
 import translate_text
 import pandas as pd
 import string
+
+import os
+
+import tensorflow as tf
+import tensorflow_hub as hub
+
+import matplotlib.pyplot as plt
+
+# tf.get_logger().setLevel('ERROR')
+#
+tf.compat.v1.disable_eager_execution()
+os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
+TF_FORCE_GPU_ALLOW_GROWTH = 1
+# physical_devices = tf.config.list_physical_devices('GPU')
+# tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 
 # odstrani interpunkciu, nie latinkove slova, lowercase, znaky
@@ -77,5 +91,124 @@ def do_extract():
     df.to_csv(config.web_texts, index=False, header=True)
 
 
+def get_category_as_num(x: str):
+    if x == 'Arts_and_Entertainment':
+        return 0
+    if x == 'Business_and_Consumer_Services':
+        return 1
+    if x == 'commerce_and_Shopping':
+        return 2
+    if x == 'Community_and_Society':
+        return 3
+    if x == 'Computers_Electronics_and_Technology':
+        return 4
+    if x == 'Finance':
+        return 5
+    if x == 'Food_and_Drink':
+        return 6
+    if x == 'Gambling':
+        return 7
+    if x == 'Health':
+        return 8
+    if x == 'Heavy_Industry_and_Engineering':
+        return 9
+    if x == 'Lifestyle':
+        return 10
+    if x == 'News_and_Media':
+        return 11
+    if x == 'Science_and_Education':
+        return 12
+    if x == 'Sports':
+        return 13
+    exit(0)
+
+
+def bert():
+    from sklearn.model_selection import train_test_split
+    df = pd.read_csv('web_texts.csv')
+    df['category'] = df['category'].apply(lambda x: get_category_as_num(x))
+    df = df.drop(columns=['page'])
+
+    X_train, X_test, y_train, y_test = train_test_split(df['text'].values, df['category'].values, test_size=0.2,
+                                                        random_state=1)
+
+    # y_test = OneHotEncoder().fit_transform(X_test)
+    # y_train = OneHotEncoder().fit_transform(X_train)
+
+    bert_preprocess = hub.KerasLayer("https://tfhub.dev/google/universal-sentence-encoder-cmlm/multilingual-preprocess/2")
+    bert_encoder = hub.KerasLayer("https://tfhub.dev/google/universal-sentence-encoder-cmlm/multilingual-base/1")
+
+    text_input = tf.keras.layers.Input(shape=(), dtype=tf.string, name='text')
+    preprocessed_text = bert_preprocess(text_input)
+    outputs = bert_encoder(preprocessed_text)
+
+    # pridane vrstvy
+    net = (outputs['pooled_output'])
+    net = tf.keras.layers.Dropout(0.1, name="dropout")(net)
+    net = tf.keras.layers.Dense(14, activation='softmax', name="output")(net)
+
+    model = tf.keras.Model(inputs=[text_input], outputs=[net])
+
+    # init_lr = 3e-5
+    # optimizer = optimization.create_optimizer(init_lr=init_lr,
+    #                                           num_train_steps=num_train_steps,
+    #                                           num_warmup_steps=num_warmup_steps,
+    #                                           optimizer_type='adamw')
+
+    earlystop_callback = tf.keras.callbacks.EarlyStopping(monitor="val_loss",
+                                                          patience=3,
+                                                          restore_best_weights=True)
+
+    model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                  metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+
+    history = model.fit(X_train, y_train, epochs=15, validation_split=0.2, batch_size=32, callbacks=[earlystop_callback])
+
+    model.save('text_classifier.h5')
+    y_predicted = model.predict(X_test)
+    # y_predicted = y_predicted.flatten()
+
+    loss, accuracy = model.evaluate(X_test)
+    print(f'Loss: {loss}')
+    print(f'Accuracy: {accuracy}')
+
+    history_dict = history.history
+    print(history_dict.keys())
+
+    acc = history_dict['sparse_categorical_accuracy']
+    val_acc = history_dict['val_sparse_categorical_accuracy']
+    loss = history_dict['loss']
+    val_loss = history_dict['val_loss']
+
+    epochs = range(1, len(acc) + 1)
+    fig = plt.figure(figsize=(10, 6))
+    fig.tight_layout()
+
+    plt.subplot(2, 1, 1)
+    # r is for "solid red line"
+    plt.plot(epochs, loss, 'r', label='Training loss')
+    # b is for "solid blue line"
+    plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    plt.title('Training and validation loss')
+    # plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+
+    plt.subplot(2, 1, 2)
+    plt.plot(epochs, acc, 'r', label='Training acc')
+    plt.plot(epochs, val_acc, 'b', label='Validation acc')
+    plt.title('Training and validation accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend(loc='lower right')
+
+    plt.show()
+
+    import seaborn as sns
+    from sklearn.metrics import confusion_matrix, plot_confusion_matrix
+    matrix_confusion = confusion_matrix(y_test, y_predicted)
+    sns.heatmap(matrix_confusion, square=True, annot=True, cmap='Blues', fmt='d', cbar=False)
+
 if __name__ == '__main__':
-    do_extract()
+    # do_extract()
+    bert()
