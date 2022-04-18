@@ -1,10 +1,3 @@
-import transfer_lr_InceptionResNetV2
-import transfer_lr_MobileNetV2
-import transfer_lr_binary_InceptionResNetV2
-import FineTuningBinary
-import FineTuningCategorical
-import FineTuningBinaryMobileNet
-import FineTuningCategoricalMobileNet
 import kmeans
 import os
 import config

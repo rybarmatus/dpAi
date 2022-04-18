@@ -15,7 +15,7 @@ if gpus:
         print(e)
 
 
-def  fineTune(data_path, outFileName):
+def fineTune(data_path, outFileName):
 
 
     train_data = tf.keras.utils.image_dataset_from_directory(
