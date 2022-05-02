@@ -1,6 +1,9 @@
+import PIL
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from PIL.Image import Image
+from keras import regularizers
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
 
@@ -9,8 +12,24 @@ import tensorflow_hub as hub
 from tensorflow import keras
 import tensorflow_text
 
+def resize_images():
+    df = pd.read_csv('text_with_img.csv')
+    for page in df['img']:
+        baseheight = 300
+        print(page)
+        filename = page.split("\\")[5]
+        dir = page.replace(filename, '')
+        dir = dir.replace('dp2 - Copy', 'dp_reduced')
+        from pathlib import Path
+        Path(dir).mkdir(parents=True, exist_ok=True)
+        img = PIL.Image.open(page)
+        img = img.resize((baseheight, baseheight), PIL.Image.ANTIALIAS)
+        page = page.replace('dp2 - Copy', 'dp_reduced')
+        img.save(page)
+
+
 def find_img_for_text():
-    data_path = 'D:\\dp2\\web_categories - Copy'
+    data_path = 'D:\dp2 - Copy\web_categories - Copy'
     train_data = tf.keras.utils.image_dataset_from_directory(
         data_path,
         seed=123,
@@ -288,11 +307,18 @@ def create_multimodal_model(
 
     # Concatenate the projections and pass through the classification layer.
     concatenated = tf.keras.layers.Concatenate()([vision_projections, text_projections])
+    concatenated = tf.keras.layers.Dense(units=68, activation='relu',
+                              kernel_regularizer=regularizers.l1_l2(l1=0.001, l2=0.001),
+                              )(concatenated)
+    concatenated = keras.layers.Dropout(0.4)(concatenated)
     outputs = tf.keras.layers.Dense(14, activation="softmax")(concatenated)
     return tf.keras.Model([image_1, text_inputs], outputs)
 
 
 if __name__ == '__main__':
+    t()
+    resize_images()
+    exit(0)
     df = pd.read_csv('text_with_img.csv')
     print(df["category"].value_counts())
 
@@ -323,22 +349,27 @@ if __name__ == '__main__':
 
     multimodal_model.summary()
 
-    # multimodal_model.compile(
-    #     optimizer=keras.optimizers.Adam(),
-    #     loss=tf.keras.losses.CategoricalCrossentropy(),
-    #     metrics=[tf.keras.metrics.CategoricalAccuracy()],
-    # )
-
     multimodal_model.compile(
-        optimizer="adam", loss="sparse_categorical_crossentropy", metrics="accuracy"
+        optimizer=keras.optimizers.Adam(),
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+        metrics=[tf.keras.metrics.CategoricalAccuracy()],
     )
 
-    history = multimodal_model.fit(train_ds, validation_data=validation_ds, epochs=10)
+    # multimodal_model.compile(
+    #     optimizer="adam", loss="sparse_categorical_crossentropy", metrics="accuracy"
+    # )
+
+    early = tf.keras.callbacks.EarlyStopping(patience=3,
+
+                                             restore_best_weights=True,
+                                             monitor="val_loss", )
+
+    history = multimodal_model.fit(train_ds, validation_data=validation_ds, epochs=2, callbacks=[early])
 
     multimodal_model.save("multi_modal.h5")
 
-    acc = history.history['categorical_accuracy']
-    val_acc = history.history['val_categorical_accuracy']
+    acc = history.history['sparse_categorical_accuracy']
+    val_acc = history.history['val_sparse_categorical_accuracy']
     loss = history.history['loss']
     val_loss = history.history['val_loss']
 
