@@ -1,18 +1,9 @@
 import matplotlib.pyplot as plt
 import tensorflow as tf
-# casti kodu cerpane z https://keras.io/guides/transfer_learning/
+
 from keras import regularizers
-from tensorflow.python.framework.config import set_memory_growth
 
-tf.compat.v1.disable_v2_behavior()
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        for gpu in gpus:
-            set_memory_growth(gpu, True)
-    except RuntimeError as e:
-        print(e)
-
+# casti kodu cerpane z https://keras.io/guides/transfer_learning/
 
 def fineTune(data_path, outFileName):
     img_h = 150

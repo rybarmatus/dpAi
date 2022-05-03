@@ -204,10 +204,6 @@ def bert():
 
     plt.show()
 
-    import seaborn as sns
-    from sklearn.metrics import confusion_matrix, plot_confusion_matrix
-    matrix_confusion = confusion_matrix(y_test, y_predicted)
-    sns.heatmap(matrix_confusion, square=True, annot=True, cmap='Blues', fmt='d', cbar=False)
 
 if __name__ == '__main__':
     # do_extract()

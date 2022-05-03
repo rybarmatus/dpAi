@@ -1,5 +1,8 @@
 img_h = 100
 img_w = 100
+img_h_fine = 150
+img_w_fine = 150
+
 batch_size = 32
 
 # cesta k obrazkom stranok
@@ -17,3 +20,6 @@ html_folder = 'D:\\storedHtmls\\web_categories - Copy'
 # csv s textom z web stranok
 
 web_texts = 'web_texts.csv'
+
+purpose_image_path = 'E:\\functional'
+purpose_weights_name = 'fine_tuned_categorical_purpose.h5'

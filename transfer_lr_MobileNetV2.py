@@ -1,58 +1,32 @@
+import tensorflow as tf
+from keras import regularizers
+
+from training_helper import *
+
 def mobileNetV2(neurons, l1, l2, dropout):
-    import matplotlib.pyplot as plt
-
-    import tensorflow as tf
-    from keras import regularizers
-
-    from sklearn.metrics import confusion_matrix, classification_report
-    import seaborn as sns
 
     print(l1, l2, neurons, dropout)
 
-    batch_s = 32
-    img_h = 224
-    img_w = 224
-    data_path = 'D:\\blogs-news-media'
+    train_dataset = get_dataset_from_directory(config.purpose_image_path, 0.3, SubsetEnum.Train.value,
+                                               LabelModeEnum.Int.value)
 
-    train_batchsize = 100
-    val_batchsize = 10
+    validation_dataset = get_dataset_from_directory(config.purpose_image_path, 0.3, SubsetEnum.Val.value,
+                                                    LabelModeEnum.Int.value)
 
-    train_data = tf.keras.preprocessing.image.ImageDataGenerator(
-        data_path,
-        validation_split=0.2,
-        subset='training',
-        seed=123,
-        image_size=(img_w, img_h),
-        batch_size=train_batchsize,
-        color_mode='rgb',
-        label_mode='binary',
-        shuffle=True,
-        rescale=1. / 255
-    )
+    val_batches = tf.data.experimental.cardinality(validation_dataset)
+    test_dataset = validation_dataset.take(val_batches // 4)
+    validation_dataset = validation_dataset.skip(val_batches // 4)
 
-    validation_data = tf.keras.preprocessing.image.ImageDataGenerator(
-        data_path,
-        validation_split=0.2,
-        subset='validation',
-        seed=123,
-        image_size=(img_w, img_h),
-        batch_size=val_batchsize,
-        color_mode='rgb',
-        label_mode='binary',
-        rescale=1. / 255
-    )
+    AUTOTUNE = tf.data.AUTOTUNE
 
-    train_data = tf.keras.applications.mobilenet.preprocess_input(train_data)
-    validation_data = tf.keras.applications.mobilenet.preprocess_input(validation_data)
-
-    autotune = tf.data.AUTOTUNE
-    train_data = train_data.cache().prefetch(buffer_size=autotune)
-    validation_data = validation_data.cache().prefetch(buffer_size=autotune)
+    train_ds = train_dataset.prefetch(buffer_size=AUTOTUNE)
+    validation_ds = validation_dataset.prefetch(buffer_size=AUTOTUNE)
+    test_dataset = test_dataset.prefetch(buffer_size=AUTOTUNE)
 
     base_model = tf.keras.applications.MobileNetV2(
         include_top=False,
         weights='imagenet',
-        input_shape=(img_w, img_h, 3)  # TODO mensie inputy skusit
+        input_shape=(config.img_w_fine, config.img_h_fine, 3)  # TODO mensie inputy skusit
     )
 
     base_model.trainable = False
@@ -84,7 +58,7 @@ def mobileNetV2(neurons, l1, l2, dropout):
                                              restore_best_weights=True)
 
     # fit model
-    history = model.fit(train_data,
+    history = model.fit(train_ds,
                         batch_size=batch_s,
                         verbose=1,
                         validation_data=validation_data,
@@ -130,3 +104,5 @@ def mobileNetV2(neurons, l1, l2, dropout):
 
     print("Loss: ", accuracy_score[0])
 
+if __name__ == '__main__':
+    mobileNetV2()
