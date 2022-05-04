@@ -82,8 +82,12 @@ def fineTune(data_path, outFileName):
                                              restore_best_weights=True,
                                              monitor="val_loss", )
 
-    epochs = 1
+    epochs = 20
     history = model.fit(train_ds, epochs=epochs, validation_data=validation_ds, callbacks=[early])
+
+    plot_training(history, AccuracyTypeEnum.SparceCategorical, AccuracyTypeEnum.ValSparseCategorical)
+
+    print_accuracy(model, test_dataset)
 
     acc = history.history['categorical_accuracy']
     val_acc = history.history['val_categorical_accuracy']

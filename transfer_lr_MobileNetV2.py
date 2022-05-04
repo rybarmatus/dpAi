@@ -26,7 +26,7 @@ def mobileNetV2(neurons, l1, l2, dropout):
     base_model = tf.keras.applications.MobileNetV2(
         include_top=False,
         weights='imagenet',
-        input_shape=(config.img_w_fine, config.img_h_fine, 3)  # TODO mensie inputy skusit
+        input_shape=(config.img_w, config.img_w, 3),
     )
 
     base_model.trainable = False
@@ -53,7 +53,7 @@ def mobileNetV2(neurons, l1, l2, dropout):
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     model.summary()
 
-    early = tf.keras.callbacks.EarlyStopping(patience=10,
+    early = tf.keras.callbacks.EarlyStopping(patience=5,
                                              min_delta=0.001,
                                              restore_best_weights=True)
 

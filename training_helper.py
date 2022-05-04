@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import enum
 import config
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, classification_report
+import seaborn as sns
 
 
 class SubsetEnum(enum.Enum):
@@ -24,19 +25,25 @@ class AccuracyTypeEnum(enum.Enum):
     ValCategorical = 'val_categorical_accuracy'
     SparceCategorical = 'sparse_categorical_accuracy'
     ValSparseCategorical = 'val_sparse_categorical_accuracy'
+    Binary = 'binary_accuracy'
+    ValBinary = 'val_binary_accuracy'
 
 
-def get_dataset_from_directory(data_path: str, val_split: float, subset: SubsetEnum,
-                               label_mode: LabelModeEnum) -> tf.data.Dataset:
+def get_dataset_from_directory(data_path: str,
+                               val_split: float,
+                               subset: SubsetEnum,
+                               label_mode: LabelModeEnum,
+                               width: int = config.img_w,
+                               height: int = config.img_h,
+                               ) -> tf.data.Dataset:
     return tf.keras.utils.image_dataset_from_directory(
         data_path,
         validation_split=val_split,
-        subset=subset,
+        subset=subset.value,
         seed=123,
-        image_size=(config.img_w, config.img_w),
+        image_size=(width, height),
         color_mode='rgb',
-        label_mode=label_mode,
-
+        label_mode=label_mode.value,
     )
 
 
@@ -66,7 +73,7 @@ def plot_loss(history):
     plt.plot(loss, label='Training Loss')
     plt.plot(val_loss, label='Validation Loss')
     plt.legend(loc='upper right')
-    plt.ylabel('Cross Entropy')
+    plt.ylabel('Loss')
     plt.title(f'Training and Validation Loss. \nTrain Loss: {str(loss[-1])}\nValidation Loss: {str(val_loss[-1])}')
     plt.xlabel('epoch')
     plt.tight_layout(pad=3.0)
@@ -78,14 +85,26 @@ def plot_training(history, train_type: AccuracyTypeEnum, val_type: AccuracyTypeE
     plt.show()
 
 
-def plot_confusion(predicted_labels, correct_labels, test_dataset: tf.data.Dataset):
-    ConfusionMatrixDisplay(confusion_matrix(predicted_labels, correct_labels), display_labels=test_dataset.clas).plot()
+def plot_confusion(predicted_labels, correct_labels, name_classes):
+    cm = confusion_matrix(predicted_labels, correct_labels)
+    ConfusionMatrixDisplay(cm, display_labels=name_classes).plot()
     plt.show()
+
+    cm_df = pd.DataFrame(cm,
+                         index=name_classes,
+                         columns=name_classes)
+    plt.figure(figsize=(10, 5))
+    sns.heatmap(cm_df, annot=True)
+    plt.title('Confusion Matrix')
+    plt.ylabel('Actal Values')
+    plt.xlabel('Predicted Values')
+    plt.show()
+
     print("---- CONFUSION MATRIX ----")
     print(confusion_matrix(predicted_labels, correct_labels))
 
 
-def do_evaluate(model: keras.Model, test_dataset: tf.data.Dataset):
+def do_evaluate(model: keras.Model, test_dataset: tf.data.Dataset, name_classes):
     y_pred = []  # store predicted labels
     y_true = []  # store true labels
 
@@ -106,10 +125,10 @@ def do_evaluate(model: keras.Model, test_dataset: tf.data.Dataset):
     correct_labels = tf.concat([item for item in y_true], axis=0)
     predicted_labels = tf.concat([item for item in y_pred], axis=0)
 
-    plot_confusion(predicted_labels, correct_labels)
-    print("---- CLASSIFICATION REPORT ----")
-    print(classification_report(test_dataset.classes, predicted_labels,
-                                target_names=list(test_dataset.class_indices.keys())))
+    plot_confusion(predicted_labels, correct_labels, name_classes)
+    # print("---- CLASSIFICATION REPORT ----")
+    # print(classification_report(test_dataset.classes, predicted_labels,
+    #                             target_names=list(test_dataset.class_indices.keys())))
 
 def print_accuracy(model: keras.Model, test_dataset: tf.data.Dataset):
     accuracy_score = model.evaluate(test_dataset)

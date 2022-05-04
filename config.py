@@ -23,3 +23,6 @@ web_texts = 'web_texts.csv'
 
 purpose_image_path = 'E:\\functional'
 purpose_weights_name = 'fine_tuned_categorical_purpose.h5'
+
+binary_image_path = 'D:\\detail_list_data'
+binary_weights_name = 'fine_tuned_binary.h5'

@@ -1,28 +1,14 @@
+from training_helper import *
+import config
+
 def tranfser_InceptionResNetV2(neurons, l1, l2, dropout):
     import matplotlib.pyplot as plt
 
     import tensorflow as tf
     from keras import regularizers
 
-    print(l1, l2, neurons, dropout)
-
-    from tensorflow.python.framework.config import set_memory_growth
-    tf.compat.v1.disable_v2_behavior()
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    if gpus:
-        try:
-            for gpu in gpus:
-                set_memory_growth(gpu, True)
-        except RuntimeError as e:
-            print(e)
-
-    batch_s = 32
-    img_h = 240
-    img_w = 240
-    data_path = 'D:\\blogs-news-media'
-
     train_data = tf.keras.utils.image_dataset_from_directory(
-        data_path,
+        config.binary_image_path,
         validation_split=0.2,
         subset='training',
         seed=123,
@@ -87,6 +73,10 @@ def tranfser_InceptionResNetV2(neurons, l1, l2, dropout):
                         validation_data=validation_data,
                         epochs=2,
                         callbacks=[early])  # TODO https://keras.io/api/callbacks/model_checkpoint/
+
+    plot_training(history, AccuracyTypeEnum.SparceCategorical, AccuracyTypeEnum.ValSparseCategorical)
+
+    print_accuracy(model, test_dataset)
 
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']

@@ -5,7 +5,7 @@ from keras import regularizers
 from tensorflow.python.framework.config import set_memory_growth
 import config
 
-tf.compat.v1.disable_v2_behavior()
+# tf.compat.v1.disable_v2_behavior()
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
