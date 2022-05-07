@@ -40,7 +40,7 @@ def fineTune(data_path, outFileName):
 
     data_augmentation = keras.Sequential()
 
-    base_model = keras.applications.Xception(
+    base_model = keras.applications.InceptionResNetV2(
         weights="imagenet",
         input_shape=(config.img_w_fine, config.img_h_fine, 3),
         include_top=False,
@@ -51,16 +51,11 @@ def fineTune(data_path, outFileName):
 
     # Create new model on top
     inputs = keras.Input(shape=(config.img_w_fine, config.img_h_fine, 3))
-    x = data_augmentation(inputs)  # Apply random data augmentation
+    x = data_augmentation(inputs)
 
-    # Pre-trained Xception weights requires that input be scaled
-    # from (0, 255) to a range of (-1., +1.), the rescaling layer
-    scale_layer = keras.layers.Rescaling(scale=1 / 127.5, offset=-1)
-    x = scale_layer(x)
+    x = tf.keras.applications.inception_resnet_v2.preprocess_input(x)
 
-    # The base model contains batchnorm layers. We want to keep them in inference mode
-    # when we unfreeze the base model for fine-tuning, so we make sure that the
-    # base_model is running in inference mode here.
+
     x = base_model(x, training=False)
     x = keras.layers.GlobalAveragePooling2D()(x)
     x = tf.keras.layers.Dense(units=68, activation='relu',

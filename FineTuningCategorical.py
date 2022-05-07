@@ -37,7 +37,7 @@ def fineTune(data_path, outFileName):
     from tensorflow import keras
 
     data_augmentation = keras.Sequential()
-
+    # TODO InceptionResnt
     base_model = keras.applications.Xception(
         weights="imagenet",  # Load weights pre-trained on ImageNet.
         input_shape=(img_w, img_h, 3),

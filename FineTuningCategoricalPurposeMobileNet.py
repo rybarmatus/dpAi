@@ -14,6 +14,8 @@ def fine_tune():
     test_dataset = validation_dataset.take(val_batches // 4)
     validation_dataset = validation_dataset.skip(val_batches // 4)
 
+    name_classes = train_dataset.class_names
+
     AUTOTUNE = tf.data.AUTOTUNE
 
     train_ds = train_dataset.prefetch(buffer_size=AUTOTUNE)
@@ -37,13 +39,8 @@ def fine_tune():
     inputs = keras.Input(shape=(config.img_w, config.img_w, 3))
     x = data_augmentation(inputs)  # Apply random data augmentation
 
-    # Pre-trained Xception weights requires that input be scaled
-    # from (0, 255) to a range of (-1., +1.), the rescaling layer
     x = tf.keras.applications.mobilenet.preprocess_input(x)
 
-    # The base model contains batchnorm layers. We want to keep them in inference mode
-    # when we unfreeze the base model for fine-tuning, so we make sure that the
-    # base_model is running in inference mode here.
     x = base_model(x, training=False)
     x = keras.layers.GlobalAveragePooling2D()(x)
     x = tf.keras.layers.Dense(units=68, activation='relu',
@@ -88,7 +85,7 @@ def fine_tune():
 
     plot_training(history_fined, AccuracyTypeEnum.SparceCategorical, AccuracyTypeEnum.ValSparseCategorical)
     print_accuracy(model, test_dataset)
-    do_evaluate(model, test_dataset)
+    do_evaluate(model, test_dataset, name_classes)
 
 
 if __name__ == '__main__':

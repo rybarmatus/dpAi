@@ -23,25 +23,26 @@ if __name__ == '__main__':
     # FineTuningCategoricalMobileNet.fineTune(data_path, "fineCategoricalMobilenet.h5")
     # kmeans.do_kmeans_after_dim_reduction()
     # kmeans.do_kmeans()
-    kmeans.kmeans_elbow()
-    pass
-    listOfFiles = []
-    notPresent = []
-    for (dirpath, dirnames, filenames) in os.walk(config.images_path):
-        listOfFiles += [os.path.join(file) for file in filenames]
+    # kmeans.kmeans_elbow()
+    # pass
+    # listOfFiles = []
+    # notPresent = []
+    # for (dirpath, dirnames, filenames) in os.walk(config.images_path):
+    #     listOfFiles += [os.path.join(file) for file in filenames]
+    #
+    # test = []
+    #
+    # for dirpath, dirnames, filenames in os.walk(config.html_folder):
+    #     for f in filenames:
+    #         tst = f.removesuffix('.html')
+    #         tst += '.png'
+    #         test += [f]
+    #         if str(tst) not in listOfFiles:
+    #             notPresent += [tst]
+    #     # if filenames not in listOfFiles:
+    #     #     print(filenames)
+    #     #     notPresent += filenames
 
-    test = []
-
-    for dirpath, dirnames, filenames in os.walk(config.html_folder):
-        for f in filenames:
-            tst = f.removesuffix('.html')
-            tst += '.png'
-            test += [f]
-            if str(tst) not in listOfFiles:
-                notPresent += [tst]
-        # if filenames not in listOfFiles:
-        #     print(filenames)
-        #     notPresent += filenames
 
 
     pass

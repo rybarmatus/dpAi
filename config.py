@@ -26,3 +26,6 @@ purpose_weights_name = 'fine_tuned_categorical_purpose.h5'
 
 binary_image_path = 'D:\\detail_list_data'
 binary_weights_name = 'fine_tuned_binary.h5'
+
+all_categories_image_path = 'D:\\all categories\\web_categories - Copy'
+all_categories_weight_name = 'fine_tuned_all_cat.h5'

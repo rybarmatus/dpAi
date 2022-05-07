@@ -1,12 +1,14 @@
+import enum
+
 import keras
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-import matplotlib.pyplot as plt
-import enum
-import config
-from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, classification_report
 import seaborn as sns
+import tensorflow as tf
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
+
+import config
 
 
 class SubsetEnum(enum.Enum):
@@ -85,6 +87,27 @@ def plot_training(history, train_type: AccuracyTypeEnum, val_type: AccuracyTypeE
     plt.show()
 
 
+def do_plot_big_confusion(predicted_labels, correct_labels, name_classes):
+    cm = confusion_matrix(predicted_labels, correct_labels)
+    ConfusionMatrixDisplay(cm, display_labels=name_classes).plot()
+    plt.show()
+
+    cm_df = pd.DataFrame(cm,
+                         index=name_classes,
+                         columns=name_classes)
+    ax = sns.heatmap(cm_df, annot=True)
+    plt.title('Confusion Matrix')
+    plt.ylabel('Actal Values')
+    plt.xlabel('Predicted Values')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=15, rotation_mode='anchor', ha='right')
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=-45, rotation_mode='anchor', ha='right')
+    ax.figure.savefig('hmx.png', transparent=True, bbox_inches='tight')
+    plt.close()
+
+    print("---- CONFUSION MATRIX ----")
+    print(confusion_matrix(predicted_labels, correct_labels))
+
+
 def plot_confusion(predicted_labels, correct_labels, name_classes):
     cm = confusion_matrix(predicted_labels, correct_labels)
     ConfusionMatrixDisplay(cm, display_labels=name_classes).plot()
@@ -93,7 +116,7 @@ def plot_confusion(predicted_labels, correct_labels, name_classes):
     cm_df = pd.DataFrame(cm,
                          index=name_classes,
                          columns=name_classes)
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(20, 10))
     sns.heatmap(cm_df, annot=True)
     plt.title('Confusion Matrix')
     plt.ylabel('Actal Values')
@@ -104,7 +127,8 @@ def plot_confusion(predicted_labels, correct_labels, name_classes):
     print(confusion_matrix(predicted_labels, correct_labels))
 
 
-def do_evaluate(model: keras.Model, test_dataset: tf.data.Dataset, name_classes):
+def do_evaluate(model: keras.Model, test_dataset: tf.data.Dataset, name_classes,
+                plot_big=False):
     y_pred = []  # store predicted labels
     y_true = []  # store true labels
 
@@ -125,10 +149,11 @@ def do_evaluate(model: keras.Model, test_dataset: tf.data.Dataset, name_classes)
     correct_labels = tf.concat([item for item in y_true], axis=0)
     predicted_labels = tf.concat([item for item in y_pred], axis=0)
 
-    plot_confusion(predicted_labels, correct_labels, name_classes)
-    # print("---- CLASSIFICATION REPORT ----")
-    # print(classification_report(test_dataset.classes, predicted_labels,
-    #                             target_names=list(test_dataset.class_indices.keys())))
+    if plot_big:
+        do_plot_big_confusion(predicted_labels, correct_labels, name_classes)
+    else:
+        plot_confusion(predicted_labels, correct_labels, name_classes)
+
 
 def print_accuracy(model: keras.Model, test_dataset: tf.data.Dataset):
     accuracy_score = model.evaluate(test_dataset)

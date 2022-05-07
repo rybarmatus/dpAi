@@ -14,7 +14,7 @@ if gpus:
         print(e)
 
 
-def fineTune(data_path, outFileName):
+def fineTune(data_path):
 
     train_dataset = get_dataset_from_directory(data_path, 0.3, SubsetEnum.Train,
                                                LabelModeEnum.Int, width=config.img_w_fine,
@@ -44,7 +44,7 @@ def fineTune(data_path, outFileName):
         weights="imagenet",  # Load weights pre-trained on ImageNet.
         input_shape=(config.img_w_fine, config.img_h_fine, 3),
         include_top=False,
-    )  # Do not include the ImageNet classifier at the top.
+    )  # Do not include the MobileNet classifier at the top.
 
     # Freeze the base_model
     base_model.trainable = False
@@ -55,9 +55,6 @@ def fineTune(data_path, outFileName):
 
     x = tf.keras.applications.mobilenet.preprocess_input(x)
 
-    # The base model contains batchnorm layers. We want to keep them in inference mode
-    # when we unfreeze the base model for fine-tuning, so we make sure that the
-    # base_model is running in inference mode here.
     x = base_model(x, training=False)
     x = keras.layers.GlobalAveragePooling2D()(x)
     x = tf.keras.layers.Dense(units=68, activation='relu',
@@ -86,7 +83,6 @@ def fineTune(data_path, outFileName):
     print_accuracy(model, test_dataset)
     # do_evaluate(model, test_dataset, name_classes)
 
-    print_accuracy(model, test_dataset)
 
     base_model.trainable = True
     model.summary()
@@ -100,7 +96,7 @@ def fineTune(data_path, outFileName):
     epochs = 10
     history_fined = model.fit(train_ds, epochs=epochs, validation_data=validation_ds, callbacks=[early])
 
-    model.save(config.purpose_weights_name)
+    model.save(config.binary_weights_name)
 
     plot_training(history_fined, AccuracyTypeEnum.SparceCategorical, AccuracyTypeEnum.ValSparseCategorical)
     print_accuracy(model, test_dataset)
@@ -108,5 +104,5 @@ def fineTune(data_path, outFileName):
 
 
 if __name__ == '__main__':
-    for i in range(5):
-        fineTune(config.binary_image_path, config.binary_weights_name)
+    for i in range(3):
+        fineTune(config.binary_image_path)

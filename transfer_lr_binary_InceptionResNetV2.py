@@ -27,6 +27,7 @@ def tranfser_InceptionResNetV2(neurons, l1, l2, dropout):
         batch_size=batch_s,
         color_mode='rgb',
         label_mode='binary',
+        preproce
     )
 
     autotune = tf.data.AUTOTUNE
@@ -45,10 +46,6 @@ def tranfser_InceptionResNetV2(neurons, l1, l2, dropout):
         base_model,
         tf.keras.layers.BatchNormalization(renorm=True),
         tf.keras.layers.GlobalAveragePooling2D(),
-        # tf.keras.layers.Dense(512, activation='relu'), # TODO mensiu siet
-        # tf.keras.layers.Dense(256, activation='relu'),
-        # tf.keras.layers.Dropout(dropout),  # menej, viac dropoutov + l1/l2 regularizacie
-        # tf.keras.layers.Dense(128, activation='relu'),
         tf.keras.layers.Dense(units=neurons, activation='relu',
                               kernel_regularizer=regularizers.l1_l2(l1=l1, l2=l2),
                               ),
