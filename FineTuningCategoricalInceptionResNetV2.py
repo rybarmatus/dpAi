@@ -14,7 +14,7 @@ if gpus:
         print(e)
 
 
-def fineTune(data_path, i: str):
+def fineTune(data_path):
     train_dataset = get_dataset_from_directory(data_path, 0.3, SubsetEnum.Train,
                                                LabelModeEnum.Int, width=config.img_w_fine,
                                                height=config.img_h_fine)
@@ -38,7 +38,7 @@ def fineTune(data_path, i: str):
     name_classes = train_dataset.class_names
     data_augmentation = keras.Sequential()
 
-    base_model = keras.applications.MobileNetV2(
+    base_model = keras.applications.InceptionResNetV2(
         weights="imagenet",  # Load weights pre-trained on ImageNet.
         input_shape=(config.img_w_fine, config.img_h_fine, 3),
         include_top=False,
@@ -51,7 +51,7 @@ def fineTune(data_path, i: str):
     inputs = keras.Input(shape=(config.img_w_fine, config.img_h_fine, 3))
     x = data_augmentation(inputs)
 
-    x = tf.keras.applications.mobilenet.preprocess_input(x)
+    x = tf.keras.applications.inception_resnet_v2.preprocess_input(x)
 
     x = base_model(x, training=False)
     x = keras.layers.GlobalAveragePooling2D()(x)
@@ -75,7 +75,7 @@ def fineTune(data_path, i: str):
                                              monitor="val_loss", )
 
     epochs = 20
-    history = model.fit(train_ds, epochs=epochs, validation_data=validation_ds, callbacks=[early], batch_size=val_batches, workers=4, use_multiprocessing=True)
+    history = model.fit(train_ds, epochs=epochs, validation_data=validation_ds, callbacks=[early])
 
     plot_training(history, AccuracyTypeEnum.SparceCategorical, AccuracyTypeEnum.ValSparseCategorical)
     print_accuracy(model, test_dataset)
@@ -89,16 +89,15 @@ def fineTune(data_path, i: str):
         metrics=[tf.keras.metrics.SparseCategoricalAccuracy()],
     )
 
-    epochs = 10
+    epochs = 20
     history_fined = model.fit(train_ds, epochs=epochs, validation_data=validation_ds, callbacks=[early])
 
     model.save(config.all_categories_weight_name)
 
     plot_training(history_fined, AccuracyTypeEnum.SparceCategorical, AccuracyTypeEnum.ValSparseCategorical)
     print_accuracy(model, test_dataset)
-    do_evaluate(model, test_dataset, name_classes, plot_big=True, i=i)
+    do_evaluate(model, test_dataset, name_classes, plot_big=True)
 
 
 if __name__ == '__main__':
-    for i in range(3):
-        fineTune('E:\\all categories\\web_categories - Copy', str(i))
+    fineTune(config.all_categories_image_path)
