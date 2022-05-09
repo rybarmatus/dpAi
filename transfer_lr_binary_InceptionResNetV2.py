@@ -1,113 +1,77 @@
-from training_helper import *
 import config
+from training_helper import *
+
 
 def tranfser_InceptionResNetV2(neurons, l1, l2, dropout):
-    import matplotlib.pyplot as plt
-
     import tensorflow as tf
     from keras import regularizers
 
-    train_data = tf.keras.utils.image_dataset_from_directory(
-        config.binary_image_path,
-        validation_split=0.2,
-        subset='training',
-        seed=123,
-        image_size=(img_w, img_h),
-        batch_size=batch_s,
-        color_mode='rgb',
-        label_mode='binary',
-    )
 
-    validation_data = tf.keras.utils.image_dataset_from_directory(
-        data_path,
-        validation_split=0.2,
-        subset='validation',
-        seed=123,
-        image_size=(img_w, img_h),
-        batch_size=batch_s,
-        color_mode='rgb',
-        label_mode='binary',
-        preproce
-    )
+    train_dataset = get_dataset_from_directory(config.binary_image_path, 0.3, SubsetEnum.Train,
+                                               LabelModeEnum.Binary, width=config.img_w_fine,
+                                               height=config.img_h_fine)
 
-    autotune = tf.data.AUTOTUNE
-    train_data = train_data.cache().prefetch(buffer_size=autotune)
-    validation_data = validation_data.cache().prefetch(buffer_size=autotune)
+    validation_dataset = get_dataset_from_directory(config.binary_image_path, 0.3, SubsetEnum.Val,
+                                                    LabelModeEnum.Binary, width=config.img_w_fine,
+                                                    height=config.img_h_fine)
 
-    base_model = tf.keras.applications.InceptionResNetV2(
-        include_top=False,
-        weights='imagenet',
-        input_shape=(img_w, img_h, 3)  # TODO mensie inputy skusit
-    )
+    val_batches = tf.data.experimental.cardinality(validation_dataset)
+    test_dataset = validation_dataset.take(val_batches // 4)
+    validation_dataset = validation_dataset.skip(val_batches // 4)
 
-    base_model.trainable = False
+    name_classes = train_dataset.class_names
 
-    model = tf.keras.Sequential([
-        base_model,
-        tf.keras.layers.BatchNormalization(renorm=True),
-        tf.keras.layers.GlobalAveragePooling2D(),
-        tf.keras.layers.Dense(units=neurons, activation='relu',
-                              kernel_regularizer=regularizers.l1_l2(l1=l1, l2=l2),
-                              ),
-        tf.keras.layers.Dropout(dropout),
-        tf.keras.layers.Dense(1, activation='sigmoid')
-    ])
+    AUTOTUNE = tf.data.AUTOTUNE
+
+    train_ds = train_dataset.prefetch(buffer_size=AUTOTUNE)
+    validation_ds = validation_dataset.prefetch(buffer_size=AUTOTUNE)
+    test_dataset = test_dataset.prefetch(buffer_size=AUTOTUNE)
 
     from tensorflow import keras
-    model.compile(optimizer=keras.optimizers.Adam(), loss='binary_crossentropy',
-                  metrics=['accuracy'])
+
+    data_augmentation = keras.Sequential()
+
+    base_model = keras.applications.InceptionResNetV2(
+        weights="imagenet",
+        input_shape=(config.img_w_fine, config.img_h_fine, 3),
+        include_top=False,
+    )
+
+    # Freeze the base_model
+    base_model.trainable = False
+
+    # Create new model on top
+    inputs = keras.Input(shape=(config.img_w_fine, config.img_h_fine, 3))
+    x = data_augmentation(inputs)
+
+    x = tf.keras.applications.inception_resnet_v2.preprocess_input(x)
+
+    x = base_model(x, training=False)
+    x = keras.layers.GlobalAveragePooling2D()(x)
+    x = tf.keras.layers.Dense(units=neurons, activation='relu',
+                              kernel_regularizer=regularizers.l1_l2(l1=l1, l2=l2),
+                              )(x)
+    x = keras.layers.Dropout(dropout)(x)  # Regularize with dropout
+    outputs = keras.layers.Dense(1)(x)
+    model = keras.Model(inputs, outputs)
+
     model.summary()
 
+    model.compile(
+        optimizer=keras.optimizers.Adam(),
+        loss=keras.losses.BinaryCrossentropy(from_logits=True),
+        metrics=[keras.metrics.BinaryAccuracy()],
+    )
+
     early = tf.keras.callbacks.EarlyStopping(patience=3,
-                                             min_delta=0.001,
-                                             restore_best_weights=True)
+                                             restore_best_weights=True,
+                                             monitor="val_loss", )
 
-    # fit model
-    history = model.fit(train_data,
-                        workers=8,
-                        verbose=1,
-                        # use_multiprocessing = True,
-                        validation_data=validation_data,
-                        epochs=2,
-                        callbacks=[early])  # TODO https://keras.io/api/callbacks/model_checkpoint/
+    epochs = 20
+    history = model.fit(train_ds, epochs=epochs, validation_data=validation_ds, callbacks=[early], batch_size=32)
 
-    plot_training(history, AccuracyTypeEnum.SparceCategorical, AccuracyTypeEnum.ValSparseCategorical)
+    plot_training(history, AccuracyTypeEnum.Binary, AccuracyTypeEnum.ValBinary)
 
     print_accuracy(model, test_dataset)
+    do_evaluate(model, test_dataset, name_classes)
 
-    acc = history.history['accuracy']
-    val_acc = history.history['val_accuracy']
-    loss = history.history['loss']
-    val_loss = history.history['val_loss']
-
-    # plot results
-    # accuracy
-    plt.figure(figsize=(10, 16))
-    plt.rcParams['figure.figsize'] = [16, 9]
-    plt.rcParams['font.size'] = 14
-    plt.rcParams['axes.grid'] = True
-    plt.rcParams['figure.facecolor'] = 'white'
-    plt.subplot(2, 1, 1)
-    plt.plot(acc, label='Training Accuracy')
-    plt.plot(val_acc, label='Validation Accuracy')
-    plt.legend(loc='lower right')
-    plt.ylabel('Accuracy')
-    plt.title(
-        f'\nTraining and Validation Accuracy. \nTrain Accuracy: {str(acc[-1])}\nValidation Accuracy: {str(val_acc[-1])}')
-
-    # loss
-    plt.subplot(2, 1, 2)
-    plt.plot(loss, label='Training Loss')
-    plt.plot(val_loss, label='Validation Loss')
-    plt.legend(loc='upper right')
-    plt.ylabel('Cross Entropy')
-    plt.title(f'Training and Validation Loss. \nTrain Loss: {str(loss[-1])}\nValidation Loss: {str(val_loss[-1])}')
-    plt.xlabel('epoch')
-    plt.tight_layout(pad=3.0)
-    plt.show()
-
-    accuracy_score = model.evaluate(validation_data)
-    print(accuracy_score)
-    print("Accuracy: {:.4f}%".format(accuracy_score[1] * 100))
-
-    print("Loss: ", accuracy_score[0])

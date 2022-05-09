@@ -1,16 +1,18 @@
+
+# casti kodu cerpane z https://keras.io/examples/nlp/multimodal_entailment/
+
 import PIL
-import numpy as np
 import pandas as pd
 import tensorflow as tf
+import tensorflow_hub as hub
 from PIL.Image import Image
 from keras import regularizers
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
+from tensorflow import keras
 
 import config
-import tensorflow_hub as hub
-from tensorflow import keras
-import tensorflow_text
+
 
 def resize_images():
     df = pd.read_csv('text_with_img.csv')
@@ -76,50 +78,6 @@ def tt(v, files):
 def t():
     find_img_for_text()
 
-
-# from tensorflow import keras
-#
-# img_model = keras.Sequential()
-#
-# img_model.add(keras.applications.MobileNetV2(
-#     weights="imagenet",  # Load weights pre-trained on ImageNet.
-#     input_shape=(config.img_w, config.img_w, 3),
-#     include_top=False,
-# ))  # Do not include the ImageNet classifier at the top.
-#
-# # Freeze the base_model
-# img_model.trainable = False
-# img_model.add(tf.keras.applications.mobilenet.preprocess_input(img_model))
-# img_model.add(img_model, training=False)
-# img_model.add(keras.layers.GlobalAveragePooling2D())
-# img_model.add(tf.keras.layers.Dense(units=68, activation='relu',
-#                           kernel_regularizer=regularizers.l1_l2(l1=0.001, l2=0.001),
-#                           ))
-# img_model.add(keras.layers.Dropout(0.4))  # Regularize with dropout
-#
-# bert_preprocess = hub.KerasLayer("https://tfhub.dev/google/universal-sentence-encoder-cmlm/multilingual-preprocess/2")
-# bert_encoder = hub.KerasLayer("https://tfhub.dev/google/universal-sentence-encoder-cmlm/multilingual-base/1")
-#
-# text_input = tf.keras.layers.Input(shape=(), dtype=tf.string, name='text')
-# preprocessed_text = bert_preprocess(text_input)
-# outputs = bert_encoder(preprocessed_text)
-# net = (outputs['pooled_output'])
-#
-# net = tf.keras.layers.Dropout(0.1, name="dropout")(net)
-# net = tf.keras.layers.Dense(14, activation='softmax', name="output")(net)
-#
-# text_model = tf.keras.Model(inputs=[text_input], outputs=[net])
-#
-# image_input = layers.Input(shape = input_shape, dtype=tf.float32,
-#                            name = "image")
-#
-# image_side = model_cnn(image_input)
-# text_side = model_lstm([input_word_ids, input_mask, segment_ids])
-# # Concatenate features from images and texts
-# merged = layers.Concatenate()([image_side, text_side])
-# merged = layers.Dense(256, activation = 'relu')(merged)
-# output = layers.Dense(nClasses, activation='softmax', name = "class")(merged)
-# model = models.Model([input_word_ids, input_mask, segment_ids, image_input], output)
 
 def make_bert_preprocessing_model(sentence_features, seq_length=128):
     bert_preprocess_path = "https://tfhub.dev/google/universal-sentence-encoder-cmlm/multilingual-preprocess/2"

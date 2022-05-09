@@ -40,7 +40,7 @@ def do_extract():
     text_elements = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p']
     df = pd.DataFrame(columns=['page', 'category', 'text'])
     index = 0
-    for dirpath, dirnames, filenames in os.walk(config.html_folder):
+    for dirpath, dirnames, filenames in os.walk(config.html_folder2):
         for f in filenames:
             index += 1
             print(f)
@@ -88,7 +88,7 @@ def do_extract():
                     continue
                 df = df.append({'page': page, 'category': category, 'text': page_str}, ignore_index=True)
 
-    df.to_csv(config.web_texts, index=False, header=True)
+    df.to_csv(config.web_texts2, index=False, header=True)
 
 
 def get_category_as_num(x: str):
@@ -206,5 +206,5 @@ def bert():
 
 
 if __name__ == '__main__':
-    # do_extract()
-    bert()
+    do_extract()
+    # bert()
