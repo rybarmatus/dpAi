@@ -51,9 +51,9 @@ def mobileNetV2(neurons, l1, l2, dropout):
 
     # fit model
     history = model.fit(train_ds,
-                        batch_size=batch_s,
+                        batch_size=config.batch_size,
                         verbose=1,
-                        validation_data=validation_data,
+                        validation_data=validation_ds,
                         epochs=15,
                         callbacks=[early])  # TODO https://keras.io/api/callbacks/model_checkpoint/
 
