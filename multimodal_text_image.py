@@ -1,5 +1,6 @@
 
 # casti kodu cerpane z https://keras.io/examples/nlp/multimodal_entailment/
+import os
 
 import PIL
 import pandas as pd
@@ -28,6 +29,20 @@ def resize_images():
         img = img.resize((baseheight, baseheight), PIL.Image.ANTIALIAS)
         page = page.replace('dp2 - Copy', 'dp_reduced')
         img.save(page)
+
+
+
+def resize_images_dataset():
+        baseheight = 300
+        for dirpath, dirnames, filenames in os.walk(config.all_categories_image_path):
+            for f in filenames:
+                print(f)
+                dir = dirpath.replace('all categories', 'dp_reduced_all')
+                from pathlib import Path
+                Path(dir).mkdir(parents=True, exist_ok=True)
+                img = PIL.Image.open(dirpath+'\\'+f)
+                img = img.resize((baseheight, baseheight), PIL.Image.ANTIALIAS)
+                img.save(dir+'\\'+f)
 
 
 def find_img_for_text():
@@ -277,7 +292,7 @@ if __name__ == '__main__':
     t()
     resize_images()
     exit(0)
-    df = pd.read_csv('text_with_img.csv')
+    df = pd.read_csv('text_with_img_drive_c.csv')
     print(df["category"].value_counts())
 
     train_df, test_df = train_test_split(
